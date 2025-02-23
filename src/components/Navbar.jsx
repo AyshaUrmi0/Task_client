@@ -13,7 +13,7 @@ const Navbar = () => {
           <li>
             <button
               onClick={logOut}
-              className="btn btn-sm bg-red-400 hover:bg-red-500 text-white"
+              className="text-white bg-red-400 btn btn-sm hover:bg-red-500"
             >
               Log Out
             </button>
@@ -35,7 +35,7 @@ const Navbar = () => {
     <div className="navbar bg-base-100">
       <div className="flex-1">
         <Link to="/" className="text-3xl font-bold text-purple-700">
-          Task-Tracker
+        My Daily Planner
         </Link>
       </div>
       <div className="flex-none">

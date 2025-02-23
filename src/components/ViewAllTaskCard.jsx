@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Swal from "sweetalert2";
 import ButtonLoading from "./ButtonLoading";
 import toast from "react-hot-toast";
+import { Clock, CheckCircle2, AlertCircle, Pencil, Trash2, ChevronRight } from 'lucide-react';
 
 const ViewAllTaskCard = ({ task, refetch }) => {
   const { _id, title, description, category, date } = task;
@@ -87,53 +88,99 @@ const ViewAllTaskCard = ({ task, refetch }) => {
     setLoading(false);
   };
 
- // Function to truncate description text
-const truncateDescription = (desc = "", length) => {
-  if (desc.length <= length) return desc;
-  return desc.slice(0, length) + "...";
-};
+  // Function to truncate description text
+  const truncateDescription = (desc = "", length) => {
+    if (desc.length <= length) return desc;
+    return desc.slice(0, length) + "...";
+  };
+
+  // Function to get category styles
+  const getCategoryStyles = () => {
+    switch (category) {
+      case "To-Do":
+        return {
+          bg: "bg-red-50",
+          border: "border-red-200",
+          text: "text-red-700",
+          icon: <AlertCircle className="w-5 h-5 text-red-500" />,
+        };
+      case "In Progress":
+        return {
+          bg: "bg-yellow-50",
+          border: "border-yellow-200",
+          text: "text-yellow-700",
+          icon: <Clock className="w-5 h-5 text-yellow-500" />,
+        };
+      case "Done":
+        return {
+          bg: "bg-green-50",
+          border: "border-green-200",
+          text: "text-green-700",
+          icon: <CheckCircle2 className="w-5 h-5 text-green-500" />,
+        };
+      default:
+        return {
+          bg: "bg-gray-50",
+          border: "border-gray-200",
+          text: "text-gray-700",
+          icon: null,
+        };
+    }
+  };
+
+  const categoryStyles = getCategoryStyles();
 
   return (
     <>
       {/* Task Card */}
-      <div
-        className={`card ${category === "To-Do" && "bg-red-50"} ${
-          category === "In Progress" && "bg-yellow-50"
-        } ${category === "Done" && "bg-green-50"} bg-base-100 shadow-xl flex flex-col h-[300px]`}
-      >
-        <div className="flex flex-col flex-grow card-body">
-          <h2 className="card-title">{title}</h2>
-          {/* Show truncated or full description based on state */}
-          <p>
-  {showFullDescription
-    ? description || "No description available"
-    : truncateDescription(description || "", 50)}
-  {description && description.length > 50 && (
-    <button
-      className="ml-2 text-blue-500"
-      onClick={() => setShowFullDescription((prev) => !prev)}
-    >
-      {showFullDescription ? "See less" : "See more"}
-    </button>
-  )}
-</p>
-          <p>{category}</p>
-          <p>{format(new Date(date), "dd MMM yyyy")}</p>
+      <div className={`rounded-xl border ${categoryStyles.border} shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1`}>
+        <div className={`${categoryStyles.bg} p-6`}>
+          {/* Header */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-2">
+              {categoryStyles.icon}
+              <span className={`text-sm font-medium ${categoryStyles.text} px-3 py-1 rounded-full bg-white bg-opacity-50`}>
+                {category}
+              </span>
+            </div>
+            <span className="text-sm text-gray-500">
+              {format(new Date(date), "MMM dd, yyyy")}
+            </span>
+          </div>
 
-          {/* Push buttons to bottom */}
-          <div className="flex-grow"></div>
+          {/* Content */}
+          <h2 className="mb-3 text-xl font-bold text-gray-800">{title}</h2>
+          <div className="mb-4 text-gray-600">
+            {showFullDescription ? (
+              description || "No description available"
+            ) : (
+              truncateDescription(description || "", 100)
+            )}
+            {description && description.length > 100 && (
+              <button
+                className="inline-flex items-center ml-2 font-medium text-purple-600 hover:text-purple-700"
+                onClick={() => setShowFullDescription((prev) => !prev)}
+              >
+                {showFullDescription ? "Show less" : "Show more"}
+                <ChevronRight className={`w-4 h-4 ml-1 transform transition-transform ${showFullDescription ? 'rotate-90' : ''}`} />
+              </button>
+            )}
+          </div>
 
-          <div className="justify-end card-actions">
+          {/* Actions */}
+          <div className="flex justify-end mt-4 space-x-2">
             <button
-              className="text-base font-semibold text-white bg-purple-600 btn hover:bg-purple-700"
               onClick={openModal}
+              className="inline-flex items-center px-4 py-2 text-white transition-colors duration-200 bg-purple-600 rounded-lg hover:bg-purple-700"
             >
+              <Pencil className="w-4 h-4 mr-2" />
               Edit
             </button>
             <button
               onClick={() => handleDelete(_id)}
-              className="text-base font-semibold text-white bg-red-500 btn hover:bg-red-600"
+              className="inline-flex items-center px-4 py-2 text-white transition-colors duration-200 bg-red-500 rounded-lg hover:bg-red-600"
             >
+              <Trash2 className="w-4 h-4 mr-2" />
               Delete
             </button>
           </div>
@@ -142,85 +189,85 @@ const truncateDescription = (desc = "", length) => {
 
       {/* Modal */}
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="p-6 bg-white rounded-lg shadow-lg w-96">
-            <h2 className="mb-4 text-xl font-bold text-center text-purple-700">
-              Edit Task
-            </h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-[32rem] max-w-[90vw] transform transition-all">
+            <div className="p-6">
+              <h2 className="mb-6 text-2xl font-bold text-center text-gray-800">
+                Edit Task
+              </h2>
 
-            {/* Edit Form */}
-            <form onSubmit={handleEdit}>
-              {/* Title Input */}
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Title</span>
-                </label>
-                <input
-                  type="text"
-                  name="title"
-                  className="w-full p-3 mb-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  value={editTitle}
-                  onChange={(e) => setEditTitle(e.target.value)}
-                  required
-                />
-              </div>
+              {/* Edit Form */}
+              <form onSubmit={handleEdit} className="space-y-4">
+                {/* Title Input */}
+                <div>
+                  <label className="block mb-1 text-sm font-medium text-gray-700">
+                    Title
+                  </label>
+                  <input
+                    type="text"
+                    name="title"
+                    className="w-full px-4 py-2 transition-all duration-200 border-2 border-gray-200 rounded-lg focus:border-purple-500 focus:ring focus:ring-purple-200"
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    required
+                  />
+                </div>
 
-              {/* Description Textarea */}
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Description</span>
-                </label>
-                <textarea
-                  name="description"
-                  className="w-full p-3 mb-2 border-2 border-purple-200 rounded-lg textarea textarea-bordered focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  value={editDescription}
-                  onChange={(e) => setEditDescription(e.target.value)}
-                  required
-                ></textarea>
-              </div>
+                {/* Description Textarea */}
+                <div>
+                  <label className="block mb-1 text-sm font-medium text-gray-700">
+                    Description
+                  </label>
+                  <textarea
+                    name="description"
+                    className="w-full px-4 py-2 rounded-lg border-2 border-gray-200 focus:border-purple-500 focus:ring focus:ring-purple-200 transition-all duration-200 min-h-[120px]"
+                    value={editDescription}
+                    onChange={(e) => setEditDescription(e.target.value)}
+                    required
+                  ></textarea>
+                </div>
 
-              {/* Category Dropdown */}
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Category</span>
-                </label>
-                <select
-                  name="category"
-                  className="w-full p-3 mb-2 border-2 border-purple-200 rounded-lg select select-bordered focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  value={selectCategory}
-                  onChange={(e) => setSelectCategory(e.target.value)}
-                  required
-                >
-                  <option value="" disabled>
-                    Select a category
-                  </option>
-                  <option value="To-Do">To-Do</option>
-                  <option value="In Progress">In Progress</option>
-                  <option value="Done">Done</option>
-                </select>
-              </div>
-
-              {/* Buttons */}
-              <div className="flex justify-end gap-2 mt-4">
-                {loading ? (
-                  <ButtonLoading />
-                ) : (
-                  <button
-                    type="submit"
-                    className="text-base font-semibold text-white bg-purple-600 btn hover:bg-purple-700"
+                {/* Category Dropdown */}
+                <div>
+                  <label className="block mb-1 text-sm font-medium text-gray-700">
+                    Category
+                  </label>
+                  <select
+                    name="category"
+                    className="w-full px-4 py-2 transition-all duration-200 border-2 border-gray-200 rounded-lg focus:border-purple-500 focus:ring focus:ring-purple-200"
+                    value={selectCategory}
+                    onChange={(e) => setSelectCategory(e.target.value)}
+                    required
                   >
-                    Save
+                    <option value="" disabled>Select a category</option>
+                    <option value="To-Do">To-Do</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Done">Done</option>
+                  </select>
+                </div>
+
+                {/* Buttons */}
+                <div className="flex justify-end mt-6 space-x-3">
+                  <button
+                    type="button"
+                    className="px-6 py-2 text-gray-700 transition-colors duration-200 bg-gray-100 rounded-lg hover:bg-gray-200"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Cancel
                   </button>
-                )}
-                <button
-                  type="button"
-                  className="text-base font-semibold text-white bg-red-500 btn hover:bg-red-600"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
+                  {loading ? (
+                    <ButtonLoading />
+                  ) : (
+                    <button
+                      type="submit"
+                      className="px-6 py-2 text-white transition-colors duration-200 bg-purple-600 rounded-lg hover:bg-purple-700"
+                    >
+                      Save Changes
+                    </button>
+                  )}
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}
