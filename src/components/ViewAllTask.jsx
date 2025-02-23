@@ -33,9 +33,7 @@ const ViewAllTask = () => {
     if (allTask) {
       const groupedTasks = {
         "To-Do": allTask.filter((task) => task.category === "To-Do"),
-        "In Progress": allTask.filter(
-          (task) => task.category === "In Progress"
-        ),
+        "In Progress": allTask.filter((task) => task.category === "In Progress"),
         Done: allTask.filter((task) => task.category === "Done"),
       };
       setTasks(groupedTasks);
@@ -62,9 +60,10 @@ const ViewAllTask = () => {
       const destTasks = [...tasks[destColumn]];
       const [movedItem] = sourceTasks.splice(source.index, 1);
 
-      // Update category
-      movedItem.category = destColumn;
-      destTasks.splice(destination.index, 0, movedItem);
+      // Create an updated task preserving all properties and updating the category
+      const updatedTask = { ...movedItem, category: destColumn };
+
+      destTasks.splice(destination.index, 0, updatedTask);
 
       setTasks({
         ...tasks,
@@ -72,45 +71,42 @@ const ViewAllTask = () => {
         [destColumn]: destTasks,
       });
 
-      await axios.patch(
-        `${import.meta.env.VITE_API_URL}/task/${movedItem._id}`,
-        {
-          title: movedItem.title,
-          description: movedItem.description,
-          selectCategory: destColumn,
-        }
-      );
-
-      refetch();
+      try {
+        // Update the full task in the backend
+        await axios.patch(
+          `${import.meta.env.VITE_API_URL}/task/${updatedTask._id}`,
+          updatedTask
+        );
+        refetch();
+      } catch (error) {
+        console.error("Error updating task:", error);
+      }
     }
   };
 
   if (isLoading) {
     return <Loading />;
   }
-  // ${category === "To-Do" && "bg-red-50"} ${
-  //   category === "In Progress" && "bg-yellow-50"
-  // } ${
-  //   category === "Done" && "bg-green-50"
-  // }
 
   return (
     <div>
-      <h2 className="text-4xl  font-bold mb-4 text-center text-purple-700">
+      <h2 className="mb-4 text-4xl font-bold text-center text-purple-700">
         View All Tasks
       </h2>
       <DragDropContext onDragEnd={handleDragEnd}>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
           {Object.keys(tasks).map((category) => (
             <div
               key={category}
-              className={`border border-purple-400 p-4 rounded-md min-h-[300px] flex flex-col`}
+              className="border border-purple-400 p-4 rounded-md min-h-[300px] flex flex-col"
             >
               <h3
                 className={`text-lg font-bold mb-3 text-center ${
-                  category === "To-Do" && "text-red-600"
-                } ${category === "In Progress" && "text-yellow-400"} ${
-                  category === "Done" && "text-green-400"
+                  category === "To-Do"
+                    ? "text-red-600"
+                    : category === "In Progress"
+                    ? "text-yellow-400"
+                    : "text-green-400"
                 }`}
               >
                 {category}
@@ -120,7 +116,7 @@ const ViewAllTask = () => {
                   <div
                     ref={provided.innerRef}
                     {...provided.droppableProps}
-                    className="space-y-3 flex-grow"
+                    className="flex-grow space-y-3"
                   >
                     {tasks[category].map((task, index) => (
                       <Draggable

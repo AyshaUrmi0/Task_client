@@ -6,17 +6,23 @@ import ButtonLoading from "./ButtonLoading";
 import toast from "react-hot-toast";
 
 const ViewAllTaskCard = ({ task, refetch }) => {
-  const [selectCategory, setSelectCategory] = useState("");
-  const [loading, setLoading] = useState(false);
   const { _id, title, description, category, date } = task;
   const [isOpen, setIsOpen] = useState(false);
   const [showFullDescription, setShowFullDescription] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [selectCategory, setSelectCategory] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  // Open modal and reset fields for the selected task
+  // Open modal and set task details
   const openModal = () => {
     setIsOpen(true);
+    setSelectCategory(category);
+    setEditTitle(title);
+    setEditDescription(description);
   };
 
+  // Handle delete task
   const handleDelete = (id) => {
     Swal.fire({
       title: "Are you sure?",
@@ -43,41 +49,49 @@ const ViewAllTaskCard = ({ task, refetch }) => {
     });
   };
 
+  // Handle edit task
   const handleEdit = async (e) => {
-    setLoading(true);
     e.preventDefault();
-    const formData = new FormData(e.target);
-    const title = formData.get("title");
-    const description = formData.get("description");
-    const editedTask = { title, description, selectCategory };
-    if (category === selectCategory) {
-      toast.error(`The category is already set to ${selectCategory}.`);
+    setLoading(true);
+
+    if (!selectCategory) {
+      toast.error("Please select a category.");
       setLoading(false);
       return;
     }
-    const { data } = await axios.patch(
-      `${import.meta.env.VITE_API_URL}/task/${_id}`,
-      editedTask
-    );
-    console.log(data);
-    if (data.modifiedCount > 0) {
-      Swal.fire({
-        title: "Updated!",
-        text: "Your task has been updated.",
-        icon: "success",
-      });
-      refetch();
-      setIsOpen(false);
-      setLoading(false);
-      setSelectCategory("");
+
+    const editedTask = {
+      title: editTitle,
+      description: editDescription,
+      category: selectCategory,
+    };
+
+    try {
+      const { data } = await axios.patch(
+        `${import.meta.env.VITE_API_URL}/task/${_id}`,
+        editedTask
+      );
+
+      if (data.modifiedCount > 0) {
+        Swal.fire({
+          title: "Updated!",
+          text: "Your task has been updated.",
+          icon: "success",
+        });
+        refetch();
+        setIsOpen(false);
+      }
+    } catch (error) {
+      toast.error("An error occurred while updating the task.");
     }
+    setLoading(false);
   };
 
-  // Function to truncate the description
-  const truncateDescription = (desc, length) => {
-    if (desc.length <= length) return desc;
-    return desc.slice(0, length) + "...";
-  };
+ // Function to truncate description text
+const truncateDescription = (desc = "", length) => {
+  if (desc.length <= length) return desc;
+  return desc.slice(0, length) + "...";
+};
 
   return (
     <>
@@ -85,43 +99,40 @@ const ViewAllTaskCard = ({ task, refetch }) => {
       <div
         className={`card ${category === "To-Do" && "bg-red-50"} ${
           category === "In Progress" && "bg-yellow-50"
-        } ${
-          category === "Done" && "bg-green-50"
-        } bg-base-100 shadow-xl flex flex-col h-[300px]`}
+        } ${category === "Done" && "bg-green-50"} bg-base-100 shadow-xl flex flex-col h-[300px]`}
       >
-        <div className="card-body flex flex-col flex-grow">
+        <div className="flex flex-col flex-grow card-body">
           <h2 className="card-title">{title}</h2>
           {/* Show truncated or full description based on state */}
           <p>
-            {showFullDescription
-              ? description
-              : truncateDescription(description, 50)}
-            {/* Toggle the text */}
-            {description.length > 50 && (
-              <button
-                className="text-blue-500 ml-2"
-                onClick={() => setShowFullDescription((prev) => !prev)}
-              >
-                {showFullDescription ? "See less" : "See more"}
-              </button>
-            )}
-          </p>
+  {showFullDescription
+    ? description || "No description available"
+    : truncateDescription(description || "", 50)}
+  {description && description.length > 50 && (
+    <button
+      className="ml-2 text-blue-500"
+      onClick={() => setShowFullDescription((prev) => !prev)}
+    >
+      {showFullDescription ? "See less" : "See more"}
+    </button>
+  )}
+</p>
           <p>{category}</p>
           <p>{format(new Date(date), "dd MMM yyyy")}</p>
 
-          {/* This div will push the buttons to the bottom */}
+          {/* Push buttons to bottom */}
           <div className="flex-grow"></div>
 
-          <div className="card-actions justify-end">
+          <div className="justify-end card-actions">
             <button
-              className="btn font-semibold text-base bg-purple-600 hover:bg-purple-700 text-white"
+              className="text-base font-semibold text-white bg-purple-600 btn hover:bg-purple-700"
               onClick={openModal}
             >
               Edit
             </button>
             <button
               onClick={() => handleDelete(_id)}
-              className="btn font-semibold text-base bg-red-500 hover:bg-red-600 text-white"
+              className="text-base font-semibold text-white bg-red-500 btn hover:bg-red-600"
             >
               Delete
             </button>
@@ -129,15 +140,15 @@ const ViewAllTaskCard = ({ task, refetch }) => {
         </div>
       </div>
 
-      {/* Modal (placed outside the card to avoid overlap issues) */}
+      {/* Modal */}
       {isOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-            <h2 className="text-xl font-bold mb-4 text-center text-purple-700">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="p-6 bg-white rounded-lg shadow-lg w-96">
+            <h2 className="mb-4 text-xl font-bold text-center text-purple-700">
               Edit Task
             </h2>
 
-            {/* Form Starts Here */}
+            {/* Edit Form */}
             <form onSubmit={handleEdit}>
               {/* Title Input */}
               <div className="form-control">
@@ -147,8 +158,9 @@ const ViewAllTaskCard = ({ task, refetch }) => {
                 <input
                   type="text"
                   name="title"
-                  className="w-full p-3 border-2 border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 mb-2"
-                  value={title}
+                  className="w-full p-3 mb-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
                   required
                 />
               </div>
@@ -160,8 +172,9 @@ const ViewAllTaskCard = ({ task, refetch }) => {
                 </label>
                 <textarea
                   name="description"
-                  className="textarea textarea-bordered w-full p-3 border-2 border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 mb-2 "
-                  value={description}
+                  className="w-full p-3 mb-2 border-2 border-purple-200 rounded-lg textarea textarea-bordered focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
                   required
                 ></textarea>
               </div>
@@ -173,7 +186,7 @@ const ViewAllTaskCard = ({ task, refetch }) => {
                 </label>
                 <select
                   name="category"
-                  className="select select-bordered w-full p-3 border-2 border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 mb-2"
+                  className="w-full p-3 mb-2 border-2 border-purple-200 rounded-lg select select-bordered focus:outline-none focus:ring-2 focus:ring-purple-500"
                   value={selectCategory}
                   onChange={(e) => setSelectCategory(e.target.value)}
                   required
@@ -190,22 +203,19 @@ const ViewAllTaskCard = ({ task, refetch }) => {
               {/* Buttons */}
               <div className="flex justify-end gap-2 mt-4">
                 {loading ? (
-                  <ButtonLoading></ButtonLoading>
+                  <ButtonLoading />
                 ) : (
                   <button
                     type="submit"
-                    className="btn font-semibold text-base bg-purple-600 hover:bg-purple-700 text-white"
+                    className="text-base font-semibold text-white bg-purple-600 btn hover:bg-purple-700"
                   >
                     Save
                   </button>
                 )}
                 <button
                   type="button"
-                  className="btn font-semibold text-base bg-red-500 hover:bg-red-600 text-white"
-                  onClick={() => {
-                    setIsOpen(false);
-                    setSelectCategory("");
-                  }}
+                  className="text-base font-semibold text-white bg-red-500 btn hover:bg-red-600"
+                  onClick={() => setIsOpen(false)}
                 >
                   Cancel
                 </button>
