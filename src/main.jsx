@@ -11,6 +11,7 @@ import Privet from "./privet/Privet";
 import { Toaster } from "react-hot-toast";
 import LoginPage from "./components/LoginPage";
 import SignUpPAge from "./components/SignUpPAge";
+import Profile from "./components/Profile";
 
 const router = createBrowserRouter([
   {
@@ -41,6 +42,10 @@ const router = createBrowserRouter([
         path: "/sign-up",
         element: <SignUpPAge></SignUpPAge>,
       },
+      {
+        path:"/profile",
+        element:<Profile/>
+      }
     ],
   },
 ]);
